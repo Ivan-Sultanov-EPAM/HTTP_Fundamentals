@@ -1,17 +1,8 @@
 ﻿namespace Client;
 
-class ClientApp
+internal class ClientApp
 {
-    private static HttpClient _client;
-
-    static async Task Main()
-    {
-        _client = new HttpClient();
-
-        await Act();
-    }
-
-    static async Task Act()
+    public static async Task Act(HttpClient client)
     {
         var requests = new List<string>
         {
@@ -25,25 +16,26 @@ class ClientApp
             "http://localhost:8888/MyNameByCookies/"
         };
 
-        while (true)
+        foreach (var request in requests)
         {
-            foreach (var request in requests)
-            {
-                var response = await _client.GetAsync(request);
-                Console.WriteLine(request);
-                Print(response);
+            Console.WriteLine("Press any key to proceed...");
+            Console.WriteLine();
+            Console.ReadKey(true);
+            var response = await client.GetAsync(request);
 
-                Console.ReadKey();
-                Console.WriteLine();
-            }
+            Console.WriteLine($"Request: {request}");
+            Console.WriteLine("Response:");
+            Print(response);
+
+            Console.WriteLine();
         }
 
         static void Print(HttpResponseMessage response)
         {
             var text = response.Content.ReadAsStringAsync().Result;
 
-            Console.WriteLine($"Content: {text}");
-            Console.WriteLine($"Status Code: {response.StatusCode}");
+            Console.WriteLine($"  Content: {text}");
+            Console.WriteLine($"  Status Code: {response.StatusCode}");
 
             var myNameHeader = GetHeaderValue(response, "MyNameHeader");
 
@@ -58,39 +50,26 @@ class ClientApp
             {
                 Console.WriteLine($"Cookie: {myNameCookie}");
             }
-
-            Console.WriteLine();
         }
 
-        static string GetHeaderValue(HttpResponseMessage message, string cookieName)
+        static string GetHeaderValue(HttpResponseMessage message, string headerName)
         {
             var result = message.Headers
-                .Where(h => h.Key.Equals(cookieName))
-                .Select(p => p.Value)
+                .FirstOrDefault(h => h.Key.Equals(headerName))
+                .Value?
                 .FirstOrDefault();
 
-            if (result != null)
-            {
-                return string.Join(" ", result);
-            }
-
-            return "";
+            return result ?? "";
         }
 
-        static string GetCookieValue(HttpResponseMessage message, string name)
+        static string GetCookieValue(HttpResponseMessage message, string cookieName)
         {
             var result = message.Headers
-                .Where(h => h.Key.Equals("Set-Cookie"))
-                .Select(p => p.Value)
-                .FirstOrDefault(v => v.Any(s => s.Contains("MyNameCookie")))
-                ?.FirstOrDefault();
+                .FirstOrDefault(h => h.Key.Equals("Set-Cookie"))
+                .Value?
+                .FirstOrDefault(s => s.Contains(cookieName));
 
-            if (result != null)
-            {
-                return result.Split('=')[1];
-            }
-
-            return "";
+            return result != null ? result.Split('=')[1] : "";
         }
     }
 }
