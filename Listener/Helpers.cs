@@ -15,7 +15,7 @@ public static class Helpers
                 response.StatusCode = 200;
                 break;
             case "Redirection":
-                response.StatusCode = 300;
+                response.StatusCode = 307;
                 break;
             case "ClientError":
                 response.StatusCode = 400;
